@@ -1,16 +1,13 @@
 # snow
 
-
-[![26 dec youtube thumbnail draft one](https://github.com/insanj/snow/assets/951011/afc881ad-d60b-4f74-8e91-735c09544800)](https://www.youtube.com/embed/MPOlEm-hmhU)
-
-
+[![26 dec youtube thumbnail draft one](https://github.com/insanj/snow/assets/951011/afc881ad-d60b-4f74-8e91-735c09544800)](https://www.youtube.com/watch?v=MPOlEm-hmhU)
 
 
 Let's make a festive video game from scratch! No matter what you know about games or programming, this walkthrough should be great place to get started. In 1 file, 10 steps, 1 language, and completely for free, we'll build a randomized, easily customizable game that's compatible everywhere.
 
 Along the way we'll cover both basic and advanced topics in JavaScript, SVGs, CSS, and coding in general, from dynamically resizing the game to fit a 1080p aspect ratio, to festive web browser styling, to trigonometry, recursive functions, and more.
 
-Enjoy, and happy holidays! We'll be back to less nerdy videos next week.
+Enjoy, and happy holidays! We'll be back to less nerdy videos next week. Let me know in the comments if you want more tutorials and code-related stuff like this in the future.
 
 ## License
 
