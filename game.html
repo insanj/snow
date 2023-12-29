@@ -1,0 +1,309 @@
+<html>
+	<body>
+		<script>
+			const width = 1920;
+			const height = 1080;
+
+			// step 1: create a container
+			const container = document.createElement("div");
+			document.body.append(container);
+
+			container.style.position = "fixed";
+			container.style.left = 0;
+			container.style.right = 0;
+			container.style.top = 0;
+			container.style.bottom = 0;
+
+			// step 2: create a place to draw things that resizing to 1080p
+			const canvas = document.createElement("div");
+			canvas.style.width = width;
+			canvas.style.height = height;
+
+			canvas.style.borderColor = "green";
+			canvas.style.borderStyle = "dotted";
+
+			const borderWidth = 5;
+			canvas.style.border = borderWidth;
+
+			container.append(canvas);
+
+			canvas.style.scale = Math.min(
+				window.innerWidth / (width + borderWidth * 2),
+				window.innerHeight / (height + borderWidth * 2)
+			);
+
+			canvas.style.transformOrigin = "top left";
+
+			// step 3: listen for resizing
+			window.onresize = () => {
+				canvas.style.scale = Math.min(
+					window.innerWidth / (width + borderWidth * 2),
+					window.innerHeight / (height + borderWidth * 2)
+				);
+			};
+
+			// step 4: create an SVG
+			const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+			svg.setAttributeNS(
+				"http://www.w3.org/2000/xmlns/",
+				"xmlns:xlink",
+				"http://www.w3.org/1999/xlink"
+			);
+
+			svg.style.backgroundColor = "thistle";
+
+			const playSize = 1080;
+			svg.setAttribute("viewBox", `0 0 ${playSize} ${playSize}`);
+			svg.setAttribute("width", playSize);
+			svg.setAttribute("height", playSize);
+
+			canvas.append(svg);
+
+			// step 5: create a player circle
+			const circleSize = 50;
+			const circle = document.createElementNS(
+				"http://www.w3.org/2000/svg",
+				"circle"
+			);
+			circle.setAttribute("r", circleSize);
+			circle.setAttribute("cx", playSize / 2);
+			circle.setAttribute("cy", playSize / 2);
+			circle.setAttribute("fill", "darkseagreen");
+			svg.append(circle);
+
+			canvas.style.display = "flex";
+			canvas.style.alignItems = "center";
+			canvas.style.justifyContent = "center";
+
+			circle.setAttribute("facing", "right");
+
+			// step 6: similar to reisze, let's handle the keyboard
+			const move = (element) => {
+				const direction = element.getAttribute("facing");
+				const x = +element.getAttribute("cx");
+				const y = +element.getAttribute("cy");
+				const size = +element.getAttribute("r");
+
+				const delta = 10;
+
+				switch (direction) {
+					case "left":
+						const leftX = x - delta;
+						element.setAttribute(
+							"cx",
+							leftX - size >= 0 ? leftX : playSize - size
+						);
+						break;
+					case "right":
+						const rightX = x + delta;
+						element.setAttribute(
+							"cx",
+							rightX + size <= playSize ? rightX : size
+						);
+						break;
+					case "up":
+						const upY = y - delta;
+						element.setAttribute("cy", upY - size >= 0 ? upY : playSize - size);
+						break;
+					case "down":
+						const downY = y + delta;
+						element.setAttribute("cy", downY + size <= playSize ? downY : size);
+						break;
+				}
+			};
+
+			window.onkeydown = (event) => {
+				event.preventDefault();
+				switch (event.key) {
+					case "a":
+					case "ArrowLeft":
+						circle.setAttribute("facing", "left");
+						break;
+					case "d":
+					case "ArrowRight":
+						circle.setAttribute("facing", "right");
+						break;
+					case "w":
+					case "ArrowUp":
+						circle.setAttribute("facing", "up");
+						break;
+					case "s":
+					case "ArrowDown":
+						circle.setAttribute("facing", "down");
+						break;
+				}
+
+				move(circle);
+			};
+
+			// step 7: move the player constantly in the direction it's facing
+			setInterval(() => {
+				move(circle);
+			}, 100);
+
+			// step 8: randomly generate snow that the user has to pick up
+			let level = 1;
+			const savedLevel = new URLSearchParams(location.search).get("level");
+			if (savedLevel) {
+				level = +savedLevel;
+			}
+
+			const snowAmount = level * 10;
+			const snowSize = 10;
+
+			const snowGroup = document.createElementNS(
+				"http://www.w3.org/2000/svg",
+				"g"
+			);
+			svg.append(snowGroup);
+
+			for (let i = 0; i < snowAmount; i++) {
+				const snow = document.createElementNS(
+					"http://www.w3.org/2000/svg",
+					"circle"
+				);
+				snow.setAttribute("fill", "snow");
+				snow.setAttribute("cx", Math.random() * playSize);
+				snow.setAttribute("cy", Math.random() * playSize);
+				snow.setAttribute("r", snowSize);
+				snow.setAttribute("facing", "down");
+				snowGroup.append(snow);
+
+				setInterval(() => {
+					move(snow);
+				}, 50 + Math.random() * 50);
+			}
+
+			// step 9: add a HUD
+			let caughtCount = 0;
+			const caughtLabel = document.createElementNS(
+				"http://www.w3.org/2000/svg",
+				"text"
+			);
+			caughtLabel.setAttribute("x", 50);
+			caughtLabel.setAttribute("y", 100);
+			caughtLabel.style.fill = "moccasin";
+			caughtLabel.textContent = `❄️ SNOW CAUGHT ${caughtCount} / ${snowAmount}`;
+			caughtLabel.style.font = "normal 30px sans-serif";
+			svg.append(caughtLabel);
+
+			const levelLabel = document.createElementNS(
+				"http://www.w3.org/2000/svg",
+				"text"
+			);
+			levelLabel.setAttribute("x", 50);
+			levelLabel.setAttribute("y", 60);
+			levelLabel.style.fill = "moccasin";
+			levelLabel.textContent = `LEVEL ${level}`;
+			levelLabel.style.font = "bold 30px sans-serif";
+			svg.append(levelLabel);
+
+			let startTime = new Date().getTime();
+
+			// step 10: check if you caught snow
+			let collisionCheck = () => {};
+			collisionCheck = () => {
+				if (caughtCount === snowAmount) {
+					const win = document.createElementNS(
+						"http://www.w3.org/2000/svg",
+						"text"
+					);
+					win.setAttribute("x", playSize / 2);
+					win.setAttribute("y", playSize / 2);
+					win.setAttribute("text-anchor", "middle");
+					win.style.fill = "slategray";
+					win.textContent = `🎉 YOU WIN!`;
+					win.style.font = "bold 100px sans-serif";
+					svg.append(win);
+
+					const currentTime = new Date().getTime();
+					const differenceInMS = currentTime - startTime;
+					const differenceInSeconds = Math.round(differenceInMS / 1000);
+
+					const stats = document.createElementNS(
+						"http://www.w3.org/2000/svg",
+						"text"
+					);
+					stats.setAttribute("x", playSize / 2);
+					stats.setAttribute("y", playSize / 2 + 50);
+					stats.setAttribute("text-anchor", "middle");
+					stats.style.fill = "slategray";
+					stats.textContent = `LEVEL ${level} COMPLETE IN ${differenceInSeconds} SECONDS`;
+					stats.style.font = "normal 40px sans-serif";
+					svg.append(stats);
+
+					const startNextLevel = document.createElementNS(
+						"http://www.w3.org/2000/svg",
+						"text"
+					);
+					startNextLevel.setAttribute("x", playSize / 2);
+					startNextLevel.setAttribute("y", playSize / 2 + 100);
+					startNextLevel.setAttribute("text-anchor", "middle");
+					startNextLevel.style.fill = "slategray";
+					startNextLevel.textContent = `CLICK ANYWHERE TO START NEXT LEVEL`;
+					startNextLevel.style.font = "bold 40px sans-serif";
+					svg.append(startNextLevel);
+
+					const startOverLevel = document.createElementNS(
+						"http://www.w3.org/2000/svg",
+						"text"
+					);
+					startOverLevel.setAttribute("x", playSize / 2);
+					startOverLevel.setAttribute("y", playSize - 40);
+					startOverLevel.setAttribute("text-anchor", "middle");
+					startOverLevel.style.fill = "slategray";
+					startOverLevel.textContent = `(REFRESH OR GO BACK TO TRY AGAIN)`;
+					startOverLevel.style.font = "normal 30px sans-serif";
+					svg.append(startOverLevel);
+
+					window.onclick = () => {
+						const nextLevel = level + 1;
+						const nextLevelURL = new URLSearchParams();
+						nextLevelURL.set("level", nextLevel);
+						window.location.search = nextLevelURL.toString();
+					};
+
+					return;
+				}
+
+				const circleIntersect = (circleOne, circleTwo) => {
+					return (
+						Math.hypot(circleOne.x - circleTwo.x, circleOne.y - circleTwo.y) <=
+						circleOne.size + circleTwo.size
+					);
+				};
+
+				for (const snow of snowGroup.children) {
+					const snowX = +snow.getAttribute("cx");
+					const snowY = +snow.getAttribute("cy");
+					const snowSize = +snow.getAttribute("r");
+
+					const circleOne = {
+						x: snowX,
+						y: snowY,
+						size: snowSize,
+					};
+
+					const circleTwo = {
+						x: +circle.getAttribute("cx"),
+						y: +circle.getAttribute("cy"),
+						size: +circle.getAttribute("r"),
+					};
+
+					const doesIntersect = circleIntersect(circleOne, circleTwo);
+					if (doesIntersect) {
+						snowGroup.removeChild(snow);
+						caughtCount = caughtCount + 1;
+						caughtLabel.textContent = `❄️ SNOW CAUGHT ${caughtCount} / ${snowAmount}`;
+					}
+				}
+
+				window.requestAnimationFrame(() => {
+					collisionCheck();
+				});
+			};
+
+			collisionCheck();
+		</script>
+	</body>
+</html>
